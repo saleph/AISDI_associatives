@@ -5,13 +5,13 @@ target_link_libraries(aisdiMapsTests ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
 
 add_test(boostUnitTestsRun aisdiMapsTests)
 
-if (CMAKE_CONFIGURATION_TYPES)
-    add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND}
-      --force-new-ctest-process --output-on-failure
-      --build-config "$<CONFIGURATION>"
-      DEPENDS aisdiMapsTests)
-else()
-    add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND}
-      --force-new-ctest-process --output-on-failure
-      DEPENDS aisdiMapsTests)
-endif()
+#if (CMAKE_CONFIGURATION_TYPES)
+#    add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND}
+#      --force-new-ctest-process --output-on-failure
+#      --build-config "$<CONFIGURATION>"
+#      DEPENDS aisdiMapsTests)
+#else()
+#    add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND}
+#      --force-new-ctest-process --output-on-failure
+#      DEPENDS aisdiMapsTests)
+#endif()

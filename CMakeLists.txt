@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 project(AISDI_Maps)
 
-set(CMAKE_CXX_COMPILER g++-6)
-
 include(CTest)
 enable_testing()
 
