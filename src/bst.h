@@ -5,7 +5,10 @@
 
 template <typename KeyType, typename T>
 class BST {
+public:
     struct BSTNode;
+    BSTNode *root = nullptr;
+    std::size_t size = 0;
 public:
     BST() = default;
     BST(const BST<KeyType, T>& other);
@@ -20,14 +23,19 @@ public:
     bool deleteKey(const KeyType& key);
     BSTNode* getFirstNode() const;
     BSTNode* getLastNode() const;
+    BSTNode* getNextNode(BSTNode *node) const;
+    BSTNode* getPreviousNode(BSTNode *node) const;
     bool isEmpty() const;
     BSTNode* findNodeWithKey(const KeyType& key) const;
 
+#ifdef DEBUG
     void print() const;
+#endif
 
 private:
-    BSTNode *root = nullptr;
+#ifdef DEBUG
     void print(BSTNode *node) const;
+#endif
 
     bool operatorEqualsHelper(BSTNode *currentFirst, BSTNode *currentSecond) const;
     void treeCopyingHelper(const BSTNode* otherTreeNode);
@@ -39,7 +47,13 @@ private:
 template <typename KeyType, typename T>
 struct BST<KeyType, T>::BSTNode : public std::pair<const KeyType, T> {
     std::pair<const KeyType, T> value;
-    BSTNode *left, *right, *parent;
+
+    union {
+        struct {
+            BSTNode *left, *right, *parent;
+        };
+        BSTNode *nodePointers[3];
+    };
 
     template <typename Kk, typename Tt>
     BSTNode(BSTNode *p, Kk&& k, Tt&& item)
@@ -50,9 +64,13 @@ struct BST<KeyType, T>::BSTNode : public std::pair<const KeyType, T> {
     ~BSTNode() {
         delete left;
         delete right;
+#ifdef DEBUG
+        parent = right = left = nullptr;
+#endif
     }
 };
 
+#ifdef DEBUG
 template <typename KeyType, typename T>
 void BST<KeyType, T>::print() const {
     print(root);
@@ -65,6 +83,7 @@ void BST<KeyType, T>::print(BSTNode *node) const {
     print(node->left);
     print(node->right);
 }
+#endif
 
 template <typename KeyType, typename T>
 BST<KeyType, T>::BST(const BST<KeyType, T>& other) {
@@ -79,6 +98,10 @@ BST<KeyType, T>::BST(BST<KeyType, T>&& other) {
 template <typename KeyType, typename T>
 BST<KeyType, T>::~BST() {
     delete root;
+#ifdef DEBUG
+    size = 0;
+    root = nullptr;
+#endif
 }
 
 template <typename KeyType, typename T>
@@ -100,7 +123,9 @@ bool BST<KeyType, T>::operatorEqualsHelper(BSTNode *currentFirst, BSTNode *curre
 template <typename KeyType, typename T>
 BST<KeyType, T>& BST<KeyType, T>::operator=(const BST<KeyType, T>& other) {
     delete root;
+    size = 0;
     treeCopyingHelper(other.root);
+    return *this;
 }
 
 template <typename KeyType, typename T>
@@ -115,7 +140,10 @@ template <typename KeyType, typename T>
 BST<KeyType, T>& BST<KeyType, T>::operator=(BST<KeyType, T>&& other) {
     delete root;
     root = other.root;
+    size = other.size;
     other.root = nullptr;
+    other.size = 0;
+    return *this;
 }
 
 template <typename KeyType, typename T>
@@ -123,6 +151,7 @@ template <typename Kk, typename Tt>
 typename BST<KeyType, T>::BSTNode* BST<KeyType, T>::insert(Kk&& key, Tt&& item) {
     if (!root) {
         root = new BSTNode(NULL, std::forward<Kk>(key), std::forward<Tt>(item));
+        ++size;
         return root;
     }
     return insertHelper(root, std::forward<Kk>(key), std::forward<Tt>(item));
@@ -141,6 +170,7 @@ typename BST<KeyType, T>::BSTNode* BST<KeyType, T>::insertHelper(BSTNode *curren
         if (node->value.first > key) {
             if (!node->left) {
                 node->left = new BSTNode(node, std::forward<Kk>(key), std::forward<Tt>(item));
+                ++size;
                 return node->left;
             } else {
                 node = node->left;
@@ -149,6 +179,7 @@ typename BST<KeyType, T>::BSTNode* BST<KeyType, T>::insertHelper(BSTNode *curren
         } else {
             if (!node->right) {
                 node->right = new BSTNode(node, std::forward<Kk>(key), std::forward<Tt>(item));
+                ++size;
                 return node->right;
             } else {
                 node = node->right;
@@ -193,11 +224,17 @@ bool BST<KeyType, T>::deleteKeyHelper(BSTNode *current, const KeyType& key) {
         while (validSubs->left) {
             validSubs = validSubs->left;
         }
-        std::swap(node->value, validSubs->value);
-        return deleteValueHelper(node->right, validSubs->value.first);
+
+        // magical swap of 2 nodes without reassigning std::pair<CONST Key, T>
+        BSTNode* temp[] = {node->nodePointers[0], node->nodePointers[1], node->nodePointers[2]};
+        for(int i=0;i<3;++i) node->nodePointers[i] = validSubs->nodePointers[i];
+        for(int i=0;i<3;++i) validSubs->nodePointers[i] = temp[i];
+
+        return deleteKeyHelper(node->right, validSubs->value.first);
     }
     // here node is a leaf
     delete node;
+    --size;
     return true;
 }
 
@@ -220,8 +257,54 @@ typename BST<KeyType, T>::BSTNode* BST<KeyType, T>::getLastNode() const {
 }
 
 template <typename KeyType, typename T>
+typename BST<KeyType, T>::BSTNode* BST<KeyType, T>::getNextNode(BSTNode *node) const {
+    if (node == root) return node->right;
+    if (node == node->parent->left) {
+        if (node->right) return node->right;
+        else return node->parent;
+    }
+    if (node == node->parent->right) {
+        if (node->left) {
+            while (node->left) node = node->left;
+            return node;
+        }
+        else if (node->right) return node->right;
+        else {
+            while (node->parent && node == node->parent->right) node = node->parent;
+            // if we were in the last node, we come back to root
+            if (node == root) throw std::out_of_range("end of tree");
+            // we come back to last left child, so come up
+            return node->parent;
+        }
+    }
+    return nullptr;
+}
+ //TODO:
+template <typename KeyType, typename T>
+typename BST<KeyType, T>::BSTNode* BST<KeyType, T>::getPreviousNode(BSTNode *node) const {
+    /*if (node == root) return node->left;
+    if (node == node->parent->right) {
+        if (node->left) return node->left;
+        else return node->parent;
+    }
+    if (node == node->parent->left) {
+        if (node->right) {
+            while (node->right) node = node->right;
+            return node;
+        }
+        else if (node->left) return node->left;
+        else {
+            while (node->parent && node == node->parent->left) node = node->parent;
+            if (node->parent) return node->parent;
+            else return node->right; //if root reached
+        }
+    }*/
+    return nullptr;
+}
+
+template <typename KeyType, typename T>
 bool BST<KeyType, T>::isEmpty() const {
-    return !root;
+    return !size;
 }
 
 
