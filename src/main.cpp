@@ -5,6 +5,9 @@
 #include "TreeMap.h"
 #include "avltree.h"
 #include "bst.h"
+#include <random>
+#include <chrono>
+#include <thread>
 
 namespace {
 
@@ -19,16 +22,18 @@ namespace {
 } // namespace
 
 int main() {
+    std::default_random_engine generator;
+    std::uniform_int_distribution<int> distribution(1,100000);
     BST<int, int> t;
-    for (int i = 0; i<10; ++i) {
-        t.insert(i+200,i);
-        t.insert(i,i);
+    for (int i = 0; i<20; ++i) {
+        t.insert(distribution(generator), i);
     }
-    BST<int,int>::BSTNode *node = t.getFirstNode();
+    BST<int,int>::BSTNode *node = t.getLastNode();
     try{
     while (true) {
         std::cout<< node->value.first <<": "<< node->value.second <<"\n";
-        node = t.getNextNode(node);
+        node = t.getPreviousNode(node);
+        std::this_thread::sleep_for(std::chrono::microseconds(1));
     }
     } catch(std::out_of_range &e) {
         std::cout<<e.what()<< " end of tree\n";

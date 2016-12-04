@@ -45,7 +45,7 @@ private:
 };
 
 template <typename KeyType, typename T>
-struct BST<KeyType, T>::BSTNode : public std::pair<const KeyType, T> {
+struct BST<KeyType, T>::BSTNode {
     std::pair<const KeyType, T> value;
 
     union {
@@ -258,47 +258,43 @@ typename BST<KeyType, T>::BSTNode* BST<KeyType, T>::getLastNode() const {
 
 template <typename KeyType, typename T>
 typename BST<KeyType, T>::BSTNode* BST<KeyType, T>::getNextNode(BSTNode *node) const {
-    if (node == root) return node->right;
+    if (node->right) {
+        node = node->right;
+        while (node->left) node = node->left;
+        return node;
+    }
+    if (node == root) {
+        throw std::out_of_range("end of tree");
+    }
     if (node == node->parent->left) {
-        if (node->right) return node->right;
-        else return node->parent;
+        return node->parent;
     }
     if (node == node->parent->right) {
-        if (node->left) {
-            while (node->left) node = node->left;
-            return node;
-        }
-        else if (node->right) return node->right;
-        else {
-            while (node->parent && node == node->parent->right) node = node->parent;
-            // if we were in the last node, we come back to root
-            if (node == root) throw std::out_of_range("end of tree");
-            // we come back to last left child, so come up
-            return node->parent;
-        }
+        while (node->parent && node == node->parent->right) node = node->parent;
+        if (node == root) throw std::out_of_range("end of tree");
+        else return node->parent;
     }
     return nullptr;
 }
  //TODO:
 template <typename KeyType, typename T>
 typename BST<KeyType, T>::BSTNode* BST<KeyType, T>::getPreviousNode(BSTNode *node) const {
-    /*if (node == root) return node->left;
+    if (node->left) {
+        node = node->left;
+        while (node->right) node = node->right;
+        return node;
+    }
+    if (node == root) {
+        throw std::out_of_range("end of tree");
+    }
     if (node == node->parent->right) {
-        if (node->left) return node->left;
-        else return node->parent;
+        return node->parent;
     }
     if (node == node->parent->left) {
-        if (node->right) {
-            while (node->right) node = node->right;
-            return node;
-        }
-        else if (node->left) return node->left;
-        else {
-            while (node->parent && node == node->parent->left) node = node->parent;
-            if (node->parent) return node->parent;
-            else return node->right; //if root reached
-        }
-    }*/
+        while (node->parent && node == node->parent->left) node = node->parent;
+        if (node == root) throw std::out_of_range("end of tree");
+        else return node->parent;
+    }
     return nullptr;
 }
 
