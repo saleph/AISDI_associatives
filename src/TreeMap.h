@@ -58,38 +58,43 @@ public:
     }
 
     mapped_type& operator[](const key_type& key) {
-        return tree.findNodeWithKey(key)->value.second;
+        return tree.insert(key)->value.second;
     }
 
     const mapped_type& valueOf(const key_type& key) const {
-        return tree.findNodeWithKey(key)->value.second;
+        auto node = tree.findNodeWithKey(key);
+        if (!node) throw std::out_of_range("item doesn't exist");
+        return node->value.second;
     }
 
     mapped_type& valueOf(const key_type& key) {
-        return tree.findNodeWithKey(key)->value.second;
+        auto node = tree.findNodeWithKey(key);
+        if (!node) throw std::out_of_range("item doesn't exist");
+        return node->value.second;
     }
 
     const_iterator find(const key_type& key) const {
-        (void) key;
-        throw std::runtime_error("TODO");
+        auto node = tree.findNodeWithKey(key);
+        if (!node) return ConstIterator(cend());
+        return ConstIterator(tree, node, false);
     }
 
     iterator find(const key_type& key) {
-        (void) key;
-        throw std::runtime_error("TODO");
+        auto node = tree.findNodeWithKey(key);
+        if (!node) return Iterator(end());
+        return Iterator(tree, node, false);
     }
 
     void remove(const key_type& key) {
-        tree.deleteKey(key);
+        if (!tree.deleteKey(key)) throw std::out_of_range("delete unexistent item");
     }
 
     void remove(const const_iterator& it) {
-        (void) it;
-        throw std::runtime_error("TODO");
+        if (it.isEnd || !tree.deleteKey(it.node->value.first)) throw std::out_of_range("delete unexistent item");
     }
 
     size_type getSize() const {
-        throw std::runtime_error("TODO");
+        return tree.getSize();
     }
 
     bool operator==(const TreeMap& other) const {
@@ -101,19 +106,21 @@ public:
     }
 
     iterator begin() {
-        throw std::runtime_error("TODO");
+        auto node = tree.getFirstNode();
+        return Iterator(tree, node, !static_cast<bool>(node));
     }
 
     iterator end() {
-        throw std::runtime_error("TODO");
+        return Iterator(tree, tree.getLastNode(), true);
     }
 
     const_iterator cbegin() const {
-        throw std::runtime_error("TODO");
+        auto node = tree.getFirstNode();
+        return ConstIterator(tree, node, !static_cast<bool>(node));
     }
 
     const_iterator cend() const {
-        throw std::runtime_error("TODO");
+        return ConstIterator(tree, tree.getLastNode(), true);
     }
 
     const_iterator begin() const {
@@ -127,37 +134,58 @@ public:
 
 template<typename KeyType, typename ValueType>
 class TreeMap<KeyType, ValueType>::ConstIterator {
+    friend class TreeMap;
+    const BST<KeyType, ValueType> &tree;
+    typename BST<KeyType, ValueType>::BSTNode *node;
+    bool isEnd;
 public:
     using reference = typename TreeMap::const_reference;
     using iterator_category = std::bidirectional_iterator_tag;
     using value_type = typename TreeMap::value_type;
     using pointer = const typename TreeMap::value_type*;
 
-    explicit ConstIterator() { }
+    explicit ConstIterator(const BST<KeyType, ValueType> &t,
+                           typename BST<KeyType, ValueType>::BSTNode *n,
+                           bool end)
+        : tree(t), node(n), isEnd(end)
+    { }
 
-    ConstIterator(const ConstIterator& other) {
-        (void) other;
-        throw std::runtime_error("TODO");
-    }
+    ConstIterator(const ConstIterator& other)
+        : tree(other.tree), node(other.node), isEnd(other.isEnd)
+    { }
 
     ConstIterator& operator++() {
-        throw std::runtime_error("TODO");
+        try {
+            node = tree.getNextNode(node);
+        } catch (std::out_of_range& e) {
+            if (isEnd) throw;
+            else
+                isEnd = true;
+        }
+        return *this;
     }
 
     ConstIterator operator++(int) {
-        throw std::runtime_error("TODO");
+        ConstIterator t(*this);
+        operator ++();
+        return t;
     }
 
     ConstIterator& operator--() {
-        throw std::runtime_error("TODO");
+        if(isEnd && node) isEnd = false;
+        else node = tree.getPreviousNode(node);
+        return *this;
     }
 
     ConstIterator operator--(int) {
-        throw std::runtime_error("TODO");
+        ConstIterator t(*this);
+        operator --();
+        return t;
     }
 
     reference operator*() const {
-        throw std::runtime_error("TODO");
+        if(isEnd) throw std::out_of_range("dereference of end()");
+        return node->value;
     }
 
     pointer operator->() const {
@@ -165,8 +193,7 @@ public:
     }
 
     bool operator==(const ConstIterator& other) const {
-        (void) other;
-        throw std::runtime_error("TODO");
+        return node == other.node && isEnd == other.isEnd;
     }
 
     bool operator!=(const ConstIterator& other) const {
@@ -180,7 +207,11 @@ public:
     using reference = typename TreeMap::reference;
     using pointer = typename TreeMap::value_type*;
 
-    explicit Iterator() { }
+    explicit Iterator(const BST<KeyType, ValueType> &t,
+                      typename BST<KeyType, ValueType>::BSTNode *n,
+                      bool end)
+        : ConstIterator(t, n, end)
+    { }
 
     Iterator(const ConstIterator& other)
             : ConstIterator(other) { }

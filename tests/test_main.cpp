@@ -1,6 +1,7 @@
 #ifndef WIN32
 #  define BOOST_TEST_DYN_LINK
 #endif
+#define DEBUG 1
 #define BOOST_TEST_MAIN
 #define BOOST_TEST_MODULE aisdi_maps_tests
 #include <boost/test/unit_test.hpp>
