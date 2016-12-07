@@ -1,49 +1,48 @@
-#define DEBUG 1
 #include <cstddef>
-#include <cstdlib>
 #include <string>
-#include "TreeMap.h"
-#include "avltree.h"
-#include "bst.h"
 #include <random>
-#include <chrono>
-#include <thread>
+#include <fstream>
 
-namespace {
+#include "HashMap.h"
+#include "Benchmark.h"
+#include "TreeMap.h"
 
-    template<typename K, typename V>
-    using Map = aisdi::TreeMap<K, V>;
 
-//    void perfomTest() {
-//        Map<int, std::string> map;
-//        map[1] = "TODO";
-//    }
-
-} // namespace
-
-int main() {
-    std::default_random_engine generator;
-    std::uniform_int_distribution<int> distribution(1,100000);
-    BST<int, int> t;
-    for (int i = 0; i<20; ++i) {
-        t.insert(distribution(generator), i);
+template<class Collection>
+void randomInsert(int n) {
+    Collection map;
+    std::mt19937 device;
+    std::uniform_int_distribution<int> distribution();
+    for (int i = 0; i < n; ++i) {
+        map[i] = i;
     }
-    BST<int,int>::BSTNode *node = t.getLastNode();
-    try{
-    while (true) {
-        std::cout<< node->value.first <<": "<< node->value.second <<"\n";
-        node = t.getPreviousNode(node);
-        std::this_thread::sleep_for(std::chrono::microseconds(1));
-    }
-    } catch(std::out_of_range &e) {
-        std::cout<<e.what()<< " end of tree\n";
+}
 
-    }
 
-    std::cout << "###############a\n";
-    t.print();
-//    const std::size_t repeatCount = argc > 1 ? std::atoll(argv[1]) : 10000;
-//    for (std::size_t i = 0; i < repeatCount; ++i)
-//        perfomTest();
-    return 0;
+int main(int argc, char** argv) {
+    (void) argc;
+    (void) argv;
+    std::ofstream f("cmp.txt");
+
+    using Map = aisdi::HashMap<int, int>;
+    using Tree = aisdi::TreeMap<int, int>;
+
+    bm::BenchmarkSuite randomInsertSuite("Random Insert");
+
+    auto cases = {1000, 2000, 5000, 8000, 10000, 20000,
+                  50000
+                  //, 80000,100000, 200000//,
+                  //500000, 800000, 1000000
+                 };
+
+    randomInsertSuite.addBenchmark(bm::Benchmark("HashMap", randomInsert<Map>, cases))
+                     .addBenchmark(bm::Benchmark("TreeMap", randomInsert<Tree>, cases));
+
+    randomInsertSuite.run(
+            /*        [&](std::pair<const int, double> pPair) {
+                        std::cout << "Done: " << pPair.first << " in " << pPair.second << "\n";
+                    }
+            */
+    ).exportCSV(f);
+    f.close();
 }

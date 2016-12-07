@@ -15,9 +15,9 @@ namespace aisdi {
     template<typename KeyType, typename ValueType>
     class HashMap {
         using node = typename BST<KeyType, ValueType>::BSTNode;
-        const std::size_t LIST_SIZE = 7; // prime number closest to 1024
+        const std::size_t BUCKETS_NUMBER = 3; // prime number closest to 1024
         std::vector<BST<KeyType, ValueType>> hashTable;
-        mutable std::size_t size;
+        std::size_t size;
     public:
         using key_type = KeyType;
         using mapped_type = ValueType;
@@ -34,7 +34,7 @@ namespace aisdi {
         using const_iterator = ConstIterator;
 
         HashMap()
-            : hashTable(LIST_SIZE), size(0)
+            : hashTable(BUCKETS_NUMBER), size(0)
         { }
 
         HashMap(std::initializer_list<value_type> list)
@@ -76,28 +76,28 @@ namespace aisdi {
 
         template <typename Kk>
         mapped_type& operator[](Kk&& key) {
-            std::size_t idx = std::hash<KeyType>()(key) % LIST_SIZE;
+            std::size_t idx = std::hash<KeyType>()(key) % BUCKETS_NUMBER;
             auto& t = hashTable[idx].insert(std::forward<Kk>(key))->value.second;
             updateSize();
             return t;
         }
 
         const mapped_type& valueOf(const key_type& key) const {
-            std::size_t idx = std::hash<KeyType>()(key) % LIST_SIZE;
+            std::size_t idx = std::hash<KeyType>()(key) % BUCKETS_NUMBER;
             node *n = hashTable[idx].findNodeWithKey(key);
             if (!n) throw std::out_of_range("el doesn't exist");
             return n->value.second;
         }
 
         mapped_type& valueOf(const key_type& key) {
-            std::size_t idx = std::hash<KeyType>()(key) % LIST_SIZE;
+            std::size_t idx = std::hash<KeyType>()(key) % BUCKETS_NUMBER;
             node *n = hashTable[idx].findNodeWithKey(key);
             if (!n) throw std::out_of_range("el doesn't exist");
             return n->value.second;
         }
 
         const_iterator find(const key_type& key) const {
-            std::size_t idx = std::hash<KeyType>()(key) % LIST_SIZE;
+            std::size_t idx = std::hash<KeyType>()(key) % BUCKETS_NUMBER;
             node *n = hashTable[idx].findNodeWithKey(key);
             if (!n) return cend();
             auto it = hashTable.cbegin() + idx;
@@ -109,7 +109,7 @@ namespace aisdi {
         }
 
         iterator find(const key_type& key) {
-            std::size_t idx = std::hash<KeyType>()(key) % LIST_SIZE;
+            std::size_t idx = std::hash<KeyType>()(key) % BUCKETS_NUMBER;
             node *n = hashTable[idx].findNodeWithKey(key);
             if (!n) return cend();
             auto it = hashTable.cbegin() + idx;
@@ -121,7 +121,7 @@ namespace aisdi {
         }
 
         void remove(const key_type& key) {
-            std::size_t idx = std::hash<KeyType>()(key) % LIST_SIZE;
+            std::size_t idx = std::hash<KeyType>()(key) % BUCKETS_NUMBER;
             if (!hashTable[idx].deleteKey(key))
                 throw std::out_of_range("delete unexisting item");
             updateSize();
@@ -145,7 +145,7 @@ namespace aisdi {
 
         bool operator==(const HashMap& other) const {
             if (size != other.size) return false;
-            for (auto i = 0u; i < LIST_SIZE; ++i) {
+            for (auto i = 0u; i < BUCKETS_NUMBER; ++i) {
                 if (hashTable[i] != other.hashTable[i])
                     return false;
             }
@@ -157,7 +157,7 @@ namespace aisdi {
         }
 
         void clear() {
-            hashTable = std::vector<BST<KeyType, ValueType>>(LIST_SIZE);
+            hashTable = std::vector<BST<KeyType, ValueType>>(BUCKETS_NUMBER);
             size = 0;
         }
 

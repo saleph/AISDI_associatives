@@ -189,7 +189,7 @@ typename BST<KeyType, T>::BSTNode* BST<KeyType, T>::insertHelper(BSTNode *curren
         }
         if (node->value.first > key) {
             if (!node->left) {
-                node->left = new BSTNode(node, key, item);
+                node->left = new BSTNode(node, std::forward<Kk>(key), std::forward<Tt>(item));
                 ++size;
                 return node->left;
             } else {
@@ -296,7 +296,7 @@ typename BST<KeyType, T>::BSTNode* BST<KeyType, T>::getNextNode(BSTNode *node) c
     }
     return nullptr;
 }
- //TODO:
+
 template <typename KeyType, typename T>
 typename BST<KeyType, T>::BSTNode* BST<KeyType, T>::getPreviousNode(BSTNode *node) const {
     if (!node) throw std::out_of_range("end of tree");
