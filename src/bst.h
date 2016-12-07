@@ -21,6 +21,7 @@ public:
     BST<KeyType, T>& operator=(const BST<KeyType, T>& other);
     BST<KeyType, T>& operator=(BST<KeyType, T>&& other);
     bool operator==(const BST<KeyType, T>& other) const;
+    bool operator!=(const BST<KeyType, T>& other) const;
 
         template <typename Kk, typename Tt>
     BSTNode* insert(Kk&& key, Tt&& item);
@@ -34,7 +35,7 @@ public:
     bool isEmpty() const;
     std::size_t getSize() const;
     BSTNode* findNodeWithKey(const KeyType& key) const;
-    void deleteTree();
+    void clear();
 
 #ifdef DEBUG
     void print() const;
@@ -101,7 +102,7 @@ BST<KeyType, T>::BST(BST<KeyType, T>&& other) {
 
 template <typename KeyType, typename T>
 BST<KeyType, T>::~BST() {
-    deleteTree();
+    clear();
 }
 
 template <typename KeyType, typename T>
@@ -118,11 +119,16 @@ bool BST<KeyType, T>::operator==(const BST<KeyType, T>& other) const {
 }
 
 template <typename KeyType, typename T>
+bool BST<KeyType, T>::operator!=(const BST<KeyType, T>& other) const {
+    return !operator==(other);
+}
+
+template <typename KeyType, typename T>
 BST<KeyType, T>& BST<KeyType, T>::operator=(const BST<KeyType, T>& other) {
     if (root == other.root) {
         return *this;
     }
-    deleteTree();
+    clear();
     treeCopyingHelper(other.root);
     return *this;
 }
@@ -140,7 +146,7 @@ BST<KeyType, T>& BST<KeyType, T>::operator=(BST<KeyType, T>&& other) {
     if (root == other.root) {
         return *this;
     }
-    deleteTree();
+    clear();
     root = other.root;
     size = other.size;
     other.root = nullptr;
@@ -250,7 +256,8 @@ template <typename KeyType, typename T>
 typename BST<KeyType, T>::BSTNode* BST<KeyType, T>::getFirstNode() const {
     if (!root) return nullptr;
     BSTNode *node = root;
-    while(node->left) node = node->left;
+    node = root;
+    while(node && node->left) node = node->left;
     return node;
 }
 
@@ -329,7 +336,7 @@ typename BST<KeyType, T>::BSTNode* BST<KeyType, T>::findNodeWithKey(const KeyTyp
 }
 
 template <typename KeyType, typename T>
-void BST<KeyType, T>::deleteTree() {
+void BST<KeyType, T>::clear() {
     deleteTreeHelper(root);
     size = 0;
     root = nullptr;

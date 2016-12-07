@@ -16,7 +16,7 @@ using Map = aisdi::HashMap<K, std::string>;
 using std::begin;
 using std::end;
 
-BOOST_AUTO_TEST_SUITE(MapsTests)
+BOOST_AUTO_TEST_SUITE(HashMapsTests)
 
 template <typename K>
 void thenMapContainsItems(const Map<K>& map,

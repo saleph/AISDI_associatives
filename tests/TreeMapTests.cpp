@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(GivenMapWithOnePair_WhenIterating_ThenPairIsReturn
                               TestedKeyTypes)
 {
   Map<K> map;
-  map[753] = "Rome";
+  map[753u] = "Rome";
 
   auto it = map.begin();
 
@@ -331,7 +331,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(GivenNonEmptyMap_WhenCreatingCopy_ThenAllItemsAreC
   Map<K> map = { { 753, "Rome" }, { 1789, "Paris" } };
   const Map<K> other{map};
 
-  map[1410] = "Grunwald";
+  map[1410u] = "Grunwald";
 
   thenMapContainsItems(map, { { 1410, "Grunwald" }, { 753, "Rome" }, { 1789, "Paris" } });
   thenMapContainsItems(other, { { 753, "Rome" }, { 1789, "Paris" } });
@@ -379,7 +379,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(GivenNonEmptyMap_WhenAssigningToOther_ThenAllEleme
   Map<K> other = { { 42, "Alice" }, { 27, "Bob" } };
 
   other = map;
-  map[1410] = "Grunwald";
+  map[1410u] = "Grunwald";
 
   thenMapContainsItems(other, { { 753, "Rome" }, { 1789, "Paris" } });
 }

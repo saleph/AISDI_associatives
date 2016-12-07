@@ -8,9 +8,12 @@
 #include "bst.h"
 
 namespace aisdi {
+template<typename KeyType, typename ValueType>
+class HashMap;
 
 template<typename KeyType, typename ValueType>
 class TreeMap {
+    friend class HashMap<KeyType, ValueType>;
     BST<KeyType, ValueType> tree;
 public:
     using key_type = KeyType;
@@ -57,8 +60,9 @@ public:
         return tree.isEmpty();
     }
 
-    mapped_type& operator[](const key_type& key) {
-        return tree.insert(key)->value.second;
+    template <typename Kk>
+    mapped_type& operator[](Kk&& key) {
+        return tree.insert(std::forward<Kk>(key))->value.second;
     }
 
     const mapped_type& valueOf(const key_type& key) const {
@@ -76,13 +80,13 @@ public:
     const_iterator find(const key_type& key) const {
         auto node = tree.findNodeWithKey(key);
         if (!node) return ConstIterator(cend());
-        return ConstIterator(tree, node, false);
+        return ConstIterator(&tree, node, false);
     }
 
     iterator find(const key_type& key) {
         auto node = tree.findNodeWithKey(key);
         if (!node) return Iterator(end());
-        return Iterator(tree, node, false);
+        return Iterator(&tree, node, false);
     }
 
     void remove(const key_type& key) {
@@ -105,22 +109,26 @@ public:
         return !(*this == other);
     }
 
+    void clear() {
+        tree.clear();
+    }
+
     iterator begin() {
         auto node = tree.getFirstNode();
-        return Iterator(tree, node, !static_cast<bool>(node));
+        return Iterator(&tree, node, !static_cast<bool>(node));
     }
 
     iterator end() {
-        return Iterator(tree, tree.getLastNode(), true);
+        return Iterator(&tree, tree.getLastNode(), true);
     }
 
     const_iterator cbegin() const {
         auto node = tree.getFirstNode();
-        return ConstIterator(tree, node, !static_cast<bool>(node));
+        return ConstIterator(&tree, node, !static_cast<bool>(node));
     }
 
     const_iterator cend() const {
-        return ConstIterator(tree, tree.getLastNode(), true);
+        return ConstIterator(&tree, tree.getLastNode(), true);
     }
 
     const_iterator begin() const {
@@ -135,7 +143,7 @@ public:
 template<typename KeyType, typename ValueType>
 class TreeMap<KeyType, ValueType>::ConstIterator {
     friend class TreeMap;
-    const BST<KeyType, ValueType> &tree;
+    const BST<KeyType, ValueType> *tree;
     typename BST<KeyType, ValueType>::BSTNode *node;
     bool isEnd;
 public:
@@ -144,7 +152,7 @@ public:
     using value_type = typename TreeMap::value_type;
     using pointer = const typename TreeMap::value_type*;
 
-    explicit ConstIterator(const BST<KeyType, ValueType> &t,
+    explicit ConstIterator(const BST<KeyType, ValueType> *t,
                            typename BST<KeyType, ValueType>::BSTNode *n,
                            bool end)
         : tree(t), node(n), isEnd(end)
@@ -154,9 +162,16 @@ public:
         : tree(other.tree), node(other.node), isEnd(other.isEnd)
     { }
 
+    ConstIterator& operator=(ConstIterator&& other) {
+        tree = other.tree;
+        node = other.node;
+        isEnd = other.isEnd;
+        return *this;
+    }
+
     ConstIterator& operator++() {
         try {
-            node = tree.getNextNode(node);
+            node = tree->getNextNode(node);
         } catch (std::out_of_range& e) {
             if (isEnd) throw;
             else
@@ -173,7 +188,7 @@ public:
 
     ConstIterator& operator--() {
         if(isEnd && node) isEnd = false;
-        else node = tree.getPreviousNode(node);
+        else node = tree->getPreviousNode(node);
         return *this;
     }
 
@@ -207,7 +222,7 @@ public:
     using reference = typename TreeMap::reference;
     using pointer = typename TreeMap::value_type*;
 
-    explicit Iterator(const BST<KeyType, ValueType> &t,
+    explicit Iterator(const BST<KeyType, ValueType> *t,
                       typename BST<KeyType, ValueType>::BSTNode *n,
                       bool end)
         : ConstIterator(t, n, end)
@@ -246,6 +261,8 @@ public:
         // ugly cast, yet reduces code duplication.
         return const_cast<reference>(ConstIterator::operator*());
     }
+
+
 };
 
 }
