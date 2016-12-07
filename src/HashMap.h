@@ -182,7 +182,6 @@ namespace aisdi {
             auto it = --hashTable.end();
             for (; it != hashTable.begin(); --it)
                 if (!it->isEmpty()) break;
-            //return Iterator(*this, it, it->end(), true);
             return Iterator(*this,
                             it, // iterator for hashTable
                             &(*it), // pointer to the tree under last position in hashTable
@@ -196,27 +195,26 @@ namespace aisdi {
                 if (!it->isEmpty()) break;
             if (it != hashTable.end())
                 return ConstIterator(*this,
-                                it, // iterator for hashTable
-                                &(*it), // pointer to the tree under it
-                                it->getFirstNode(), // first node in tree
-                                false); // isEnd
+                                     it, // iterator for hashTable
+                                     &(*it), // pointer to the tree under it
+                                     it->getFirstNode(), // first node in tree
+                                     false); // isEnd
             return ConstIterator(*this,
-                            it, // iterator for hashTable
-                            &(*--it), // pointer to the tree under last position in hashTable
-                            nullptr, // because any node in the tree doesn't exist
-                            true); // isEnd
+                                 it, // iterator for hashTable
+                                 &(*--it), // pointer to the tree under last position in hashTable
+                                 nullptr, // because any node in the tree doesn't exist
+                                 true); // isEnd
         }
 
         const_iterator cend() const {
             auto it = --hashTable.end();
             for (; it != hashTable.begin(); --it)
                 if (!it->isEmpty()) break;
-            //return Iterator(*this, it, it->end(), true);
             return ConstIterator(*this,
-                            it, // iterator for hashTable
-                            &(*it), // pointer to the tree under last position in hashTable
-                            nullptr, // because any node in the tree doesn't exist
-                            true); // isEnd
+                                 it, // iterator for hashTable
+                                 &(*it), // pointer to the tree under last position in hashTable
+                                 nullptr, // because any node in the tree doesn't exist
+                                 true); // isEnd
         }
 
         const_iterator begin() const {
@@ -261,7 +259,6 @@ namespace aisdi {
         ConstIterator& operator++() {
             if (end) throw std::out_of_range("");
             try {
-                //if (!tree) throw std::out_of_range("");
                 node = tree->getNextNode(node);
             } catch (std::out_of_range& e) {
                 ++vecIt;
@@ -286,8 +283,8 @@ namespace aisdi {
             try {
                 if (end || !tree) throw std::out_of_range("");
                 node = tree->getPreviousNode(node);
-            } catch (std::out_of_range& e) {
-                --vecIt;
+            } catch (std::out_of_range&) {
+                if (!end) --vecIt; // because if it was end, we are already at proper position
                 while (vecIt != map.hashTable.begin() && vecIt->isEmpty()) --vecIt;
                 tree = &*vecIt;
                 node = tree->getLastNode();
