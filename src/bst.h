@@ -107,6 +107,10 @@ BST<KeyType, T>::~BST() {
 
 template <typename KeyType, typename T>
 bool BST<KeyType, T>::operator==(const BST<KeyType, T>& other) const {
+    if (size != other.size)
+        return false;
+    if (size == 0u)
+        return true;
     BSTNode *end1 = getLastNode();
     BSTNode *end2 = other.getLastNode();
     for (BSTNode *node1 = getFirstNode(), *node2 = other.getFirstNode();
@@ -115,6 +119,8 @@ bool BST<KeyType, T>::operator==(const BST<KeyType, T>& other) const {
         if (node1->value != node2->value)
             return false;
     }
+    if (end1->value != end2->value)
+        return false;
     return true;
 }
 

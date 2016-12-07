@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(GivenMapWithOnePair_WhenIterating_ThenPairIsReturn
                               TestedKeyTypes)
 {
   Map<K> map;
-  map[753u] = "Rome";
+  map[753] = "Rome";
 
   auto it = map.begin();
 

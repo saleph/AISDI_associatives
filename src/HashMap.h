@@ -15,9 +15,9 @@ namespace aisdi {
     template<typename KeyType, typename ValueType>
     class HashMap {
         using node = typename BST<KeyType, ValueType>::BSTNode;
-        const std::size_t LIST_SIZE = 1021; // prime number closest to 1024
+        const std::size_t LIST_SIZE = 7; // prime number closest to 1024
         std::vector<BST<KeyType, ValueType>> hashTable;
-        std::size_t size;
+        mutable std::size_t size;
     public:
         using key_type = KeyType;
         using mapped_type = ValueType;
@@ -42,6 +42,7 @@ namespace aisdi {
         {
             for (auto&& pair : list)
                 (*this)[std::move(pair.first)] = std::move(pair.second);
+            updateSize();
         }
 
         HashMap(const HashMap& other)
@@ -55,15 +56,14 @@ namespace aisdi {
         }
 
         HashMap& operator=(const HashMap& other) {
-            if (*this == other) return *this;
-            clear();
+            if (this == &other) return *this;
             hashTable = other.hashTable;
             size = other.size;
             return *this;
         }
 
         HashMap& operator=(HashMap&& other) {
-            if (*this == other) return *this;
+            if (this == &other) return *this;
             hashTable = std::move(other.hashTable);
             size = other.size;
             other.clear();
@@ -77,7 +77,9 @@ namespace aisdi {
         template <typename Kk>
         mapped_type& operator[](Kk&& key) {
             std::size_t idx = std::hash<KeyType>()(key) % LIST_SIZE;
-            return hashTable[idx].insert(std::forward<Kk>(key))->value.second;
+            auto& t = hashTable[idx].insert(std::forward<Kk>(key))->value.second;
+            updateSize();
+            return t;
         }
 
         const mapped_type& valueOf(const key_type& key) const {
@@ -122,6 +124,7 @@ namespace aisdi {
             std::size_t idx = std::hash<KeyType>()(key) % LIST_SIZE;
             if (!hashTable[idx].deleteKey(key))
                 throw std::out_of_range("delete unexisting item");
+            updateSize();
         }
 
         void remove(const const_iterator& it) {
@@ -131,15 +134,20 @@ namespace aisdi {
         }
 
         size_type getSize() const {
+            return size;
+        }
+
+        void updateSize() {
             std::size_t s = 0;
             for(auto&& tree : hashTable) s += tree.getSize();
-            return s;
+            size = s;
         }
 
         bool operator==(const HashMap& other) const {
             if (size != other.size) return false;
             for (auto i = 0u; i < LIST_SIZE; ++i) {
-                if (hashTable[i] != other.hashTable[i]) return false;
+                if (hashTable[i] != other.hashTable[i])
+                    return false;
             }
             return true;
         }
@@ -149,8 +157,7 @@ namespace aisdi {
         }
 
         void clear() {
-            for (auto&& tree : hashTable)
-                tree.clear();
+            hashTable = std::vector<BST<KeyType, ValueType>>(LIST_SIZE);
             size = 0;
         }
 
@@ -254,7 +261,7 @@ namespace aisdi {
         ConstIterator& operator++() {
             if (end) throw std::out_of_range("");
             try {
-                if (!tree) throw std::out_of_range("");
+                //if (!tree) throw std::out_of_range("");
                 node = tree->getNextNode(node);
             } catch (std::out_of_range& e) {
                 ++vecIt;
@@ -276,9 +283,8 @@ namespace aisdi {
         }
 
         ConstIterator& operator--() {
-            end = false;
             try {
-                if (!tree) throw std::out_of_range("");
+                if (end || !tree) throw std::out_of_range("");
                 node = tree->getPreviousNode(node);
             } catch (std::out_of_range& e) {
                 --vecIt;
@@ -287,6 +293,7 @@ namespace aisdi {
                 node = tree->getLastNode();
                 if (vecIt == map.hashTable.begin() && vecIt->isEmpty()) throw;
             }
+            end = false;
             return *this;
         }
 
