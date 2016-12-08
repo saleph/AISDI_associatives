@@ -15,7 +15,7 @@ namespace aisdi {
     template<typename KeyType, typename ValueType>
     class HashMap {
         using node = typename BST<KeyType, ValueType>::BSTNode;
-        const std::size_t BUCKETS_NUMBER = 3; // prime number closest to 1024
+        const std::size_t BUCKETS_NUMBER = 15693; // prime number closest to 1024
         std::vector<BST<KeyType, ValueType>> hashTable;
         std::size_t size;
     public:
@@ -42,7 +42,6 @@ namespace aisdi {
         {
             for (auto&& pair : list)
                 (*this)[std::move(pair.first)] = std::move(pair.second);
-            updateSize();
         }
 
         HashMap(const HashMap& other)
@@ -77,9 +76,12 @@ namespace aisdi {
         template <typename Kk>
         mapped_type& operator[](Kk&& key) {
             std::size_t idx = std::hash<KeyType>()(key) % BUCKETS_NUMBER;
-            auto& t = hashTable[idx].insert(std::forward<Kk>(key))->value.second;
-            updateSize();
-            return t;
+            auto t = hashTable[idx].findNodeWithKey((key));
+            if (!t) {
+                ++size;
+                return hashTable[idx].insert(std::forward<Kk>(key))->value.second;
+            }
+            return t->value.second;
         }
 
         const mapped_type& valueOf(const key_type& key) const {
@@ -124,7 +126,7 @@ namespace aisdi {
             std::size_t idx = std::hash<KeyType>()(key) % BUCKETS_NUMBER;
             if (!hashTable[idx].deleteKey(key))
                 throw std::out_of_range("delete unexisting item");
-            updateSize();
+            --size;
         }
 
         void remove(const const_iterator& it) {
@@ -135,12 +137,6 @@ namespace aisdi {
 
         size_type getSize() const {
             return size;
-        }
-
-        void updateSize() {
-            std::size_t s = 0;
-            for(auto&& tree : hashTable) s += tree.getSize();
-            size = s;
         }
 
         bool operator==(const HashMap& other) const {
